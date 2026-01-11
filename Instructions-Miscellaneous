@@ -1,0 +1,113 @@
+Tun it on your machine (Termux/Linux)
+
+A) Get the tool
+
+git clone https://github.com/technocratslave-art/pmos-port-assist.git
+cd pmos-port-assist
+chmod +x pmos_port_assist.py
+
+B) Put logs in a folder
+
+Make a folder like:
+
+mkdir -p logs
+
+Copy your logs into logs/:
+
+logs/old.log
+
+logs/new.log
+
+
+Step 3 — Run the “safe compare” (this is the main command)
+
+This is the command you will use 90% of the time:
+
+python3 pmos_port_assist.py logs/new.log --compare logs/old.log --safe
+
+What this creates:
+
+logs/new.log.analysis.md  (single-log report)
+
+logs/new.log.signals.json
+
+logs/new.diff.md          (the progress/regression report)
+
+logs/new.comparison.json
+
+✅ Open logs/new.diff.md first. That’s the money file.
+
+Step 4 — What to look at (fast)
+
+Open the diff report:
+
+cat logs/new.diff.md
+
+In that file, you care about 4 sections:
+
+1. Boot Progress
+says if boot got further (timestamp delta)
+
+
+2. Signal Count Changes
+
+shows if probe_fail went down, init_fail went up, etc.
+
+
+3. Regressions
+
+if it says new panic_oops or init_fail, that’s a “you broke something” alarm
+
+
+4. New / Resolved
+
+
+the actual semantic error lines that changed
+
+Step 5 — “I don’t even have logs saved, only serial spam”
+
+No problem. Pipe it.
+
+Example (you capture UART into a file, then run):
+
+cat uart_capture.txt > logs/new.log
+python3 pmos_port_assist.py logs/new.log --safe
+
+If you literally want to run from stdin:
+
+cat uart_capture.txt | python3 pmos_port_assist.py - --safe
+
+Step 6 — What you send to the porters
+
+You send ONLY these two files:
+
+new.diff.md (progress + regressions)
+
+new.log.analysis.md (single-log context)
+
+
+If they want machine-readable:
+
+new.comparison.json
+
+3 Common “gotchas” you’ll hit
+
+1) “No timestamps found”
+
+That means your log doesn’t include [  12.345] style lines.
+Still useful — diff works on semantic errors.
+
+2) “Too many noisy probe failed”
+
+That’s normal on Qualcomm. The tool is built to show trend.
+If probe_fail drops across boots, you’re winning.
+
+3) “I don’t want ANY tail output”
+
+Use:
+
+python3 pmos_port_assist.py logs/new.log --compare logs/old.log --safe --no-tail
+
+(--safe already includes --no-tail in the version I gave you.)
+
+
